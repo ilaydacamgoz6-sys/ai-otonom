@@ -1,0 +1,32 @@
+# projects.json veya şablonlar değiştiğinde (ve her gün) tüm projeleri senkronize eder.
+# OTONOM_GH_TOKEN secret'ı gerekir: Contents, Pull requests ve Workflows yazma yetkili
+# bir fine-grained PAT (hedef depoların tamamına erişimli).
+name: Projeleri senkronize et
+
+on:
+  push:
+    branches: [main]
+    paths: [projects.json, templates/**, src/**]
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Yalnızca göster, değişiklik yapma"
+        type: boolean
+        default: false
+
+concurrency: sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Senkronize et
+        env:
+          OTONOM_GH_TOKEN: ${{ secrets.OTONOM_GH_TOKEN }}
+        run: node src/cli.ts ${{ inputs.dry_run && '--dry-run' || '' }}

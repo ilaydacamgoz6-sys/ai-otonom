@@ -1,0 +1,20 @@
+# ai-otonom tarafından yönetilir — elle düzenlemeyin.
+# Mantık merkezi depoda: https://github.com/{{CENTRAL_REPO}}
+name: Claude Maintenance
+
+on:
+  schedule:
+    - cron: "{{MAINTENANCE_CRON}}"
+  workflow_dispatch:
+
+jobs:
+  maintenance:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    uses: {{CENTRAL_REPO}}/.github/workflows/claude-maintenance.yml@{{CENTRAL_REF}}
+    with:
+      language: "{{LANGUAGE}}"
+    secrets: inherit

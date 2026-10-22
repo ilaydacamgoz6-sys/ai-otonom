@@ -1,0 +1,20 @@
+{
+  "name": "ai-otonom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tüm projeleri Claude ile otonom hale getiren merkezi proje",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "onboard": "node src/cli.ts",
+    "typecheck": "tsc",
+    "test": "node --test test/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

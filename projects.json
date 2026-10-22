@@ -1,0 +1,14 @@
+{
+  "central": {
+    "repo": "ilaydacamgoz6-sys/ai-otonom",
+    "ref": "main"
+  },
+  "defaults": {
+    "mention": true,
+    "review": true,
+    "maintenance": false,
+    "maintenanceCron": "0 6 * * 1",
+    "language": "Türkçe"
+  },
+  "projects": []
+}

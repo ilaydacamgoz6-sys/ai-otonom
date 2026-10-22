@@ -1,0 +1,52 @@
+# Yeniden kullanılabilir workflow: zamanlanmış otonom bakım.
+# Testleri çalıştırır, bozuk olanı veya güvenlik açığı olan bağımlılıkları düzeltir
+# ve gerekirse bir PR açar. Değişiklik gerekmiyorsa hiçbir şey yapmaz.
+name: Claude (maintenance)
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: "PR ve yorum dili"
+        type: string
+        default: "Türkçe"
+      extra_instructions:
+        description: "Projeye özel ek bakım talimatları"
+        type: string
+        default: ""
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: false
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+
+            Bu depo için otonom bakım çalıştırması yapıyorsun.
+            1. CLAUDE.md dosyasını oku ve projenin nasıl derlenip test edildiğini öğren.
+            2. Projenin testlerini ve lint/typecheck kontrollerini çalıştır.
+            3. Bilinen güvenlik açığı olan bağımlılıkları kontrol et (ör. `npm audit`, `pip-audit`).
+            4. Bozuk bir şey veya güvenlik açığı bulursan en küçük düzeltmeyi yap,
+               kontrolleri tekrar çalıştırarak doğrula, `otonom/maintenance-<tarih>` adlı bir
+               dala commit'le, push'la ve `gh pr create` ile açıklamalı bir PR aç.
+            5. Aynı konuda açık bir PR zaten varsa yenisini açma (`gh pr list` ile kontrol et).
+            6. Her şey yolundaysa hiçbir değişiklik yapma ve PR açma.
+            ${{ inputs.extra_instructions }}
+
+            PR başlığını ve açıklamasını ${{ inputs.language }} yaz.
+          claude_args: |
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(npm:*),Bash(npx:*),Bash(pnpm:*),Bash(yarn:*),Bash(pip:*),Bash(pip-audit:*),Bash(python:*),Bash(pytest:*),Bash(make:*),Bash(go:*),Bash(cargo:*)"

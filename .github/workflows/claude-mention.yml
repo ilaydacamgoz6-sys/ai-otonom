@@ -1,0 +1,45 @@
+# Yeniden kullanılabilir workflow: issue/PR'larda @claude etiketlendiğinde
+# Claude'un soruları yanıtlamasını ve kod değişikliği yapmasını sağlar.
+# Projeler bunu templates/claude.yml üzerinden çağırır.
+name: Claude (mention)
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: "Claude'un yanıt dili"
+        type: string
+        default: "Türkçe"
+      claude_args:
+        description: "Claude CLI'a ek argümanlar"
+        type: string
+        default: ""
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: false
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          claude_args: |
+            --append-system-prompt "Yanıtlarını ${{ inputs.language }} yaz. Depodaki CLAUDE.md kurallarına uy."
+            ${{ inputs.claude_args }}

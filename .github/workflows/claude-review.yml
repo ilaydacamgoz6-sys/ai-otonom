@@ -1,0 +1,48 @@
+# Yeniden kullanılabilir workflow: açılan/güncellenen her PR'ı otomatik inceler.
+name: Claude (review)
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: "İnceleme dili"
+        type: string
+        default: "Türkçe"
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: false
+
+jobs:
+  review:
+    # Taslak PR'ları ve bot PR'larını atla
+    if: github.event.pull_request.draft == false && github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Bu pull request'i incele. Odak noktaları:
+            - Hatalar ve mantık sorunları (en önemlisi)
+            - Güvenlik açıkları
+            - Performans sorunları
+            - Eksik testler
+            - Depodaki CLAUDE.md kurallarına uygunluk
+
+            Sadece gerçek ve somut sorunları bildir; stil tercihleri için yorum yapma.
+            Belirli kod satırları için mcp__github_inline_comment__create_inline_comment kullan.
+            Genel özet için `gh pr comment` kullan. Sorun yoksa bunu kısa bir yorumla belirt.
+            Tüm yorumları ${{ inputs.language }} yaz.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
